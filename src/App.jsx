@@ -1,10 +1,33 @@
-import { useState } from "react";
+import { useReducer } from "react";
 import Article from "./components/Article";
 
+function cartReducer(addedProducts, action) {
+  switch (action.type) {
+    case 'ADD_ITEM':
+      const productInCart = addedProducts.find(p => p.name === action.payload.name);
+      if (productInCart) {
+        action.payload.quantity = addedProducts.quantity + 1;
+
+      } else {
+        return [...addedProducts, { ...action.payload, quantity: 1 }]
+      }
+
+    case 'UPDATE_QUANTITY':
+
+      if (action.payload.quantity < 1 || isNaN(action.payload.quantity)) {
+        return addedProducts;
+      }
+      return addedProducts.map(p => p.name === action.payload.name ? { ...p, quantity: action.payload.quantity } : p)
+    case 'REMOVE_ITEM':
+      return addedProducts.filter(p => p.name !== action.payload);
+    default:
+      return addedProducts;
+  }
+}
 
 function App() {
 
-  const [addedProducts, setAddedProducts] = useState([]);
+  const [addedProducts, dispatchCart] = useReducer(cartReducer, []);
 
   const products = [
     { name: 'Mela', price: 0.5 },
@@ -12,27 +35,6 @@ function App() {
     { name: 'Latte', price: 1.0 },
     { name: 'Pasta', price: 0.7 },
   ];
-
-  function addToCart(product) {
-    const productInCart = addedProducts.find(p => p.name === product.name);
-    if (!productInCart) {
-      setAddedProducts([...addedProducts, { ...product, quantity: 1 }])
-    } else {
-      updateProductQuantity(product.name)
-    }
-  }
-
-  function updateProductQuantity(productName, quantity) {
-    if (quantity < 1 || isNaN(quantity)) {
-      return;
-    }
-    setAddedProducts(prev => prev.map(p => p.name === productName ? { ...p, quantity } : p))
-  }
-
-  function removeFromCart(productName) {
-    const removedProduct = addedProducts.filter(p => p.name !== productName);
-    setAddedProducts(removedProduct);
-  }
 
   const totalPrice = addedProducts.reduce((acc, product) => {
     return acc + product.price * product.quantity;
@@ -44,18 +46,18 @@ function App() {
       {products && products.map((p, i) =>
         <div key={i}>
           <Article data={p} />
-          <button onClick={() => addToCart(p)}>Aggiungi al carrello</button>
+          <button onClick={() => dispatchCart({ type: 'ADD_ITEM', payload: p })}>Aggiungi al carrello</button>
         </div>)}
       {addedProducts.length > 0 && (
         <>
           <h3>Carrello</h3>
           {addedProducts.map((p, i) => <div key={i}>
             <p>
-              <input type="number" value={p.quantity} onChange={e => updateProductQuantity(p.name, parseInt(e.target.value))} />
+              <input type="number" value={p.quantity} onChange={e => dispatchCart({ type: 'UPDATE_QUANTITY', payload: { name: p.name, quantity: parseInt(e.target.value) } })} />
               <span>{p.name} quantità: {p.quantity}</span>
             </p>
 
-            <button onClick={() => removeFromCart(p.name)}>Rimuovi dal carrello</button>
+            <button onClick={() => dispatchCart({ type: 'REMOVE_ITEM', payload: p.name })}>Rimuovi dal carrello</button>
           </div>)}
           <h4>Totale da pagare: {totalPrice.toFixed(2)}€</h4>
         </>
