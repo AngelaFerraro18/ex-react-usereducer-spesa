@@ -22,8 +22,11 @@ function App() {
     }
   }
 
-  function updateProductQuantity(productName) {
-    setAddedProducts(prev => prev.map(p => p.name === productName ? { ...p, quantity: p.quantity + 1 } : p))
+  function updateProductQuantity(productName, quantity) {
+    if (quantity < 1 || isNaN(quantity)) {
+      return;
+    }
+    setAddedProducts(prev => prev.map(p => p.name === productName ? { ...p, quantity } : p))
   }
 
   function removeFromCart(productName) {
@@ -47,7 +50,11 @@ function App() {
         <>
           <h3>Carrello</h3>
           {addedProducts.map((p, i) => <div key={i}>
-            <span>{p.name} quantità: {p.quantity}</span>
+            <p>
+              <input type="number" value={p.quantity} onChange={e => updateProductQuantity(p.name, parseInt(e.target.value))} />
+              <span>{p.name} quantità: {p.quantity}</span>
+            </p>
+
             <button onClick={() => removeFromCart(p.name)}>Rimuovi dal carrello</button>
           </div>)}
           <h4>Totale da pagare: {totalPrice.toFixed(2)}€</h4>
